@@ -18,7 +18,7 @@
 					<text class="book-name">{{bookItem.name}}</text>
 					<view class="book-author">{{bookItem.author}}</view>
 					<view class="buy-book">
-						<view class="now-price">￥{{(bookItem.original * bookItem.bookdec[0].dis) / 10}}</view>
+						<view class="now-price">￥{{salePirce[index]}}</view>
 						<view class="original-price">￥{{bookItem.original}}</view>
 						<view class="book-add">加</view>
 					</view>
@@ -36,7 +36,9 @@
 				coverInfo: [],
 				bookInfo:null,
 				disPrice:null,
-				pageId:null
+				pageId:null,
+				showPrice:0,
+				salePirce:[]
 			}
 		},
 		methods: {
@@ -44,7 +46,6 @@
 				let pages = getCurrentPages()
 				//获取当前页面的信息
 				let page = pages[pages.length - 1]
-				
 				let id = parseInt(page.options.id)
 				console.log(id)
 				//console.log(isNaN(id))
@@ -59,22 +60,51 @@
 					method: 'GET',
 					url:'/api/pick/list',
 					success: res => {
-						//console.log(res)
-						//console.log(this.pageId)
 						this.coverInfo.push(res.data[this.pageId])
-						//console.log(this.coverInfo)
-						this.bookInfo = res.data[this.pageId].child
-						console.log(this.bookInfo)
+						this.bookInfo = res.data[this.pageId].child	
+						//将浮点数保留两位
+						for(let i = 0; i < this.bookInfo.length; i++){
+							this.showPrice = ((this.bookInfo[i].original * this.bookInfo[i].bookdec[0].dis) / 10).toFixed(2)
+							this.salePirce.push(this.showPrice)
+						}
+						return this.bookInfo
 					},
+					
 					fail: error => {
 						console.log(error)
 					}
 				})
+				if(!h5Res){
+					const wxRes = await uni.request({
+						method: 'GET',
+						url:'http://127.0.0.1:3000/pick/list',
+						success: res => {
+							this.coverInfo.push(res.data[this.pageId])
+							this.bookInfo = res.data[this.pageId].child	
+							//将浮点数保留两位
+							for(let i = 0; i < this.bookInfo.length; i++){
+								this.showPrice = ((this.bookInfo[i].original * this.bookInfo[i].bookdec[0].dis) / 10).toFixed(2)
+								this.salePirce.push(this.showPrice)
+							}
+							return this.bookInfo
+						},
+						
+						fail: error => {
+							console.log(error)
+						}
+					})
+				}
+			},
+			setTwoPoint(){
+				console.log(this.showPrice)
+				//this.pickInfo()
+				
 			}
 		},
 		onShow() {
 			this.getPageId(),
-			this.pickInfo()
+			this.pickInfo(),
+			this.setTwoPoint()
 		}
 	}
 </script>
@@ -168,6 +198,7 @@
 	.buy-book {
 		display: flex;
 		margin-top: 140rpx;
+		position: relative;
 	}
 
 	.now-price {
@@ -188,7 +219,8 @@
 		height: 50rpx;
 		text-align: center;
 		background-color: #7AC4B6;
-		margin-left: 100rpx;
+		position: absolute;
+		right: 50rpx;
 	}
 
 	.line {
